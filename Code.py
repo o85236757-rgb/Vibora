@@ -1,9 +1,13 @@
-"""Snake con comida que se mueve al azar."""
+"""Snake con colores aleatorios y comida que se mueve."""
 
-from random import randrange, choice
+from random import choice, sample
 from turtle import *
 
 from freegames import square, vector
+
+# Cinco colores posibles, sin rojo.
+colors = ['black', 'green', 'blue', 'purple', 'orange']
+snake_color, food_color = sample(colors, 2)
 
 food = vector(0, 0)
 snake = [vector(10, 0)]
@@ -21,8 +25,26 @@ def inside(head):
     return -200 < head.x < 190 and -200 < head.y < 190
 
 
+def place_food():
+    """Coloca la comida en una casilla libre."""
+    available = [
+        vector(x, y)
+        for x in range(-190, 190, 10)
+        for y in range(-190, 190, 10)
+        if vector(x, y) not in snake
+    ]
+
+    if not available:
+        return False
+
+    position = choice(available)
+    food.x = position.x
+    food.y = position.y
+    return True
+
+
 def move_food():
-    """Intenta mover la comida un paso en una dirección aleatoria."""
+    """Intenta mover la comida un paso al azar."""
     step = choice([
         vector(10, 0),
         vector(-10, 0),
@@ -44,22 +66,17 @@ def move():
     head.move(aim)
 
     if not inside(head) or head in snake:
+        # El rojo solo indica una colisión.
         square(head.x, head.y, 9, 'red')
         update()
         return
 
     snake.append(head)
+    won = False
 
     if head == food:
         print('Snake:', len(snake))
-
-        # Genera comida en una posición libre.
-        while True:
-            food.x = randrange(-15, 15) * 10
-            food.y = randrange(-15, 15) * 10
-
-            if food not in snake:
-                break
+        won = not place_food()
     else:
         snake.pop(0)
         move_food()
@@ -67,10 +84,17 @@ def move():
     clear()
 
     for body in snake:
-        square(body.x, body.y, 9, 'black')
+        square(body.x, body.y, 9, snake_color)
 
-    square(food.x, food.y, 9, 'green')
+    if not won:
+        square(food.x, food.y, 9, food_color)
+
     update()
+
+    if won:
+        print('¡Ganaste!')
+        return
+
     ontimer(move, 100)
 
 
